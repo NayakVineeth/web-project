@@ -1,0 +1,498 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neonatal Sepsis Early Detection — CTGAN Frontend</title>
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩺</text></svg>">
+  <style>
+    :root{
+      --bg: #0e1320;
+      --card: rgba(255,255,255,0.06);
+      --card-border: rgba(255,255,255,0.12);
+      --text: #e7ebf5;
+      --muted: #a9b1c4;
+      --accent: #4cc9f0;
+      --accent-2: #80ffdb;
+      --error: #ff4d6d;
+      --ok: #58d68d;
+      --shadow: 0 20px 40px rgba(0,0,0,0.35);
+      --radius: 16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #182038 0%, transparent 60%),
+        radial-gradient(1000px 500px at 110% 10%, #1a2742 0%, transparent 60%),
+        linear-gradient(180deg, #0a0f1a 0%, #0e1320 100%);
+      min-height:100%;
+    }
+    .wrap{
+      max-width: 1100px;
+      margin: 32px auto 64px;
+      padding: 0 20px;
+    }
+    header{
+      display:flex;align-items:center;gap:16px;margin-bottom:20px
+    }
+    .logo{
+      width:56px;height:56px;border-radius:14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display:grid;place-items:center;color:#0a0f1a;font-weight:800;box-shadow:var(--shadow)
+    }
+    .title h1{margin:0;font-size:clamp(22px, 3vw, 30px);letter-spacing:.3px}
+    .title p{margin:4px 0 0;color:var(--muted);font-size:14px}
+    .shell{
+      display:grid;grid-template-columns: 1.1fr .9fr;gap:20px;
+    }
+    @media (max-width: 900px){
+      .shell{grid-template-columns:1fr}
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card h2{margin:0;padding:18px 20px;border-bottom:1px solid var(--card-border);font-size:18px}
+    form{padding:18px}
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:14px;
+    }
+    @media (max-width: 700px){
+      .grid{grid-template-columns:1fr}
+    }
+    .field{
+      display:flex;flex-direction:column;gap:8px;
+      padding:12px;border:1px solid var(--card-border);border-radius:12px;background: rgba(255,255,255,0.03)
+    }
+    label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+    .hint{font-size:12px;color:var(--muted)}
+    input[type="number"], input[type="text"], select{
+      width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);
+      background: rgba(10,15,26,0.5);color:var(--text);outline:none;font-size:14px
+    }
+    input[type="number"]:focus{border-color:var(--accent)}
+    .inline{
+      display:flex;gap:10px;align-items:center;flex-wrap:wrap
+    }
+    .units{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{
+      border:0;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700;
+      color:#0a0f1a;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      box-shadow: 0 10px 20px rgba(76,201,240,0.25);transition: transform .06s ease
+    }
+    button.secondary{
+      background: transparent;color:var(--text);border:1px solid var(--card-border);
+      box-shadow:none
+    }
+    button:active{transform:translateY(1px)}
+    .status{
+      padding:14px 18px;border-top:1px dashed var(--card-border);font-size:14px;color:var(--muted)
+    }
+    .status.ok{color:var(--ok)}
+    .status.err{color:var(--error)}
+    .json{
+      padding:16px 16px 18px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size:13px; white-space:pre-wrap; word-break:break-word; color:#d8e3ff
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;border:1px solid var(--card-border);background:rgba(255,255,255,0.03);
+      margin:14px 16px 0; font-size:12px; color:var(--muted)
+    }
+    .footer{
+      margin-top:18px;padding:16px;color:var(--muted);font-size:12px;border-top:1px solid var(--card-border)
+    }
+    .tooltip{
+      position:relative;display:inline-block;border-bottom:1px dotted transparent;cursor:help
+    }
+    .tooltip:hover .tip{
+      opacity:1;transform:translateY(0);pointer-events:auto
+    }
+    .tip{
+      pointer-events:none; position:absolute; left:0; top:24px; width:260px;
+      background:#0b0f1a; color:var(--text); border:1px solid var(--card-border); border-radius:10px;
+      padding:10px 12px; font-size:12px; opacity:0; transform:translateY(-4px); transition:.15s;
+      z-index:10; box-shadow:var(--shadow)
+    }
+    .kpi{
+      display:grid;grid-template-columns: repeat(3, 1fr); gap:10px; padding:12px 16px 0;
+    }
+    .kpi .pill{padding:10px;border:1px solid var(--card-border);border-radius:12px;background:rgba(255,255,255,0.03);font-size:12px;color:var(--muted)}
+    .switch{
+      display:flex;align-items:center;gap:10px
+    }
+    .switch input{appearance:none;width:44px;height:26px;border-radius:999px;position:relative;background:#2a3042;border:1px solid var(--card-border);outline:none;cursor:pointer;transition:.15s}
+    .switch input:checked{background:linear-gradient(135deg,var(--accent),var(--accent-2))}
+    .switch input::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.15s}
+    .switch input:checked::after{left:21px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">NS</div>
+      <div class="title">
+        <h1>Neonatal Sepsis Early Detection</h1>
+        <p>CTGAN-powered pipeline — data capture frontend</p>
+      </div>
+    </header>
+
+    <div class="shell">
+      <!-- LEFT: FORM -->
+      <section class="card" >
+        <h2>Patient Feature Entry</h2>
+        <form id="patient-form" novalidate>
+          <div class="kpi">
+            <div class="pill">All numeric fields are validated</div>
+            <div class="pill">Live JSON preview generated</div>
+            <div class="pill">Ready to POST to your API</div>
+          </div>
+
+          <div class="grid" style="margin-top:12px">
+            <!-- seconds_since_birth -->
+            <div class="field">
+              <label for="seconds_since_birth">
+                Seconds Since Birth
+                <span class="tooltip">ⓘ
+                  <span class="tip">Time in seconds from birth to measurement (e.g., 5000 ≈ 1h 23m).</span>
+                </span>
+              </label>
+              <div class="inline">
+                <input id="seconds_since_birth" name="seconds_since_birth" type="number" inputmode="numeric"
+                       min="0" max="1e7" step="1" placeholder="e.g., 5000" required />
+                <span class="units">sec</span>
+              </div>
+              <div class="hint" data-hint-for="seconds_since_birth"></div>
+            </div>
+
+            <!-- mean_hr -->
+            <div class="field">
+              <label for="mean_hr">Mean HR
+                <span class="tooltip">ⓘ
+                  <span class="tip">Average heart rate over window.</span>
+                </span>
+              </label>
+              <div class="inline">
+                <input id="mean_hr" name="mean_hr" type="number" min="40" max="250" step="1" placeholder="e.g., 120" required />
+                <span class="units">bpm</span>
+              </div>
+              <div class="hint" data-hint-for="mean_hr"></div>
+            </div>
+
+            <!-- mean_spo2 -->
+            <div class="field">
+              <label for="mean_spo2">Mean SpO₂</label>
+              <div class="inline">
+                <input id="mean_spo2" name="mean_spo2" type="number" min="50" max="100" step="0.1" placeholder="e.g., 96" required />
+                <span class="units">%</span>
+              </div>
+              <div class="hint" data-hint-for="mean_spo2"></div>
+            </div>
+
+            <!-- sd_hr -->
+            <div class="field">
+              <label for="sd_hr">SD HR</label>
+              <div class="inline">
+                <input id="sd_hr" name="sd_hr" type="number" min="0" max="100" step="0.1" placeholder="e.g., 5" required />
+                <span class="units">bpm</span>
+              </div>
+              <div class="hint" data-hint-for="sd_hr"></div>
+            </div>
+
+            <!-- sd_spo2 -->
+            <div class="field">
+              <label for="sd_spo2">SD SpO₂</label>
+              <div class="inline">
+                <input id="sd_spo2" name="sd_spo2" type="number" min="0" max="50" step="0.1" placeholder="e.g., 1.5" required />
+                <span class="units">%</span>
+              </div>
+              <div class="hint" data-hint-for="sd_spo2"></div>
+            </div>
+
+            <!-- skewness_hr -->
+            <div class="field">
+              <label for="skewness_hr">Skewness HR</label>
+              <input id="skewness_hr" name="skewness_hr" type="number" min="-10" max="10" step="0.01" placeholder="e.g., 0.2" required />
+              <div class="hint" data-hint-for="skewness_hr"></div>
+            </div>
+
+            <!-- skewness_spo2 -->
+            <div class="field">
+              <label for="skewness_spo2">Skewness SpO₂</label>
+              <input id="skewness_spo2" name="skewness_spo2" type="number" min="-10" max="10" step="0.01" placeholder="e.g., -0.1" required />
+              <div class="hint" data-hint-for="skewness_spo2"></div>
+            </div>
+
+            <!-- kurtosis_hr -->
+            <div class="field">
+              <label for="kurtosis_hr">Kurtosis HR</label>
+              <input id="kurtosis_hr" name="kurtosis_hr" type="number" min="-10" max="20" step="0.01" placeholder="e.g., 3.2" required />
+              <div class="hint" data-hint-for="kurtosis_hr"></div>
+            </div>
+
+            <!-- kurtosis_spo2 -->
+            <div class="field">
+              <label for="kurtosis_spo2">Kurtosis SpO₂</label>
+              <input id="kurtosis_spo2" name="kurtosis_spo2" type="number" min="-10" max="20" step="0.01" placeholder="e.g., 2.9" required />
+              <div class="hint" data-hint-for="kurtosis_spo2"></div>
+            </div>
+
+            <!-- max_xc_hr_spo2 -->
+            <div class="field">
+              <label for="max_xc_hr_spo2">Max Cross-Correlation HR↔SpO₂</label>
+              <input id="max_xc_hr_spo2" name="max_xc_hr_spo2" type="number" min="-1" max="1" step="0.01" placeholder="e.g., 0.85" required />
+              <div class="hint" data-hint-for="max_xc_hr_spo2"></div>
+            </div>
+
+            <!-- min_xc_hr_spo2 -->
+            <div class="field">
+              <label for="min_xc_hr_spo2">Min Cross-Correlation HR↔SpO₂</label>
+              <input id="min_xc_hr_spo2" name="min_xc_hr_spo2" type="number" min="-1" max="1" step="0.01" placeholder="e.g., -0.45" required />
+              <div class="hint" data-hint-for="min_xc_hr_spo2"></div>
+            </div>
+
+            <!-- sub -->
+            <div class="field">
+              <label for="sub">SUB
+                <span class="tooltip">ⓘ
+                  <span class="tip">Subject-level feature (e.g., baseline adjustment). Keep within −10…10 unless your pipeline expects wider.</span>
+                </span>
+              </label>
+              <input id="sub" name="sub" type="number" min="-10" max="10" step="0.01" placeholder="e.g., 0.2" required />
+              <div class="hint" data-hint-for="sub"></div>
+            </div>
+
+            <!-- blackout_window -->
+            <div class="field">
+              <label for="blackout_window">Blackout Window</label>
+              <div class="switch">
+                <input id="blackout_window" name="blackout_window" type="checkbox" />
+                <span class="units">0 = off, 1 = on</span>
+              </div>
+              <div class="hint" data-hint-for="blackout_window"></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" id="btn-example">Fill Example</button>
+            <button type="reset" class="secondary">Clear</button>
+            <button type="button" id="btn-predict">Predict Sepsis Risk</button>
+          </div>
+
+          <div id="form-status" class="status">Awaiting input…</div>
+        </form>
+      </section>
+
+      
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('patient-form');
+    const preview = document.getElementById('json-preview');
+    const statusBox = document.getElementById('form-status');
+    const responseBox = document.getElementById('model-response');
+
+    const fields = [
+      "seconds_since_birth",
+      "mean_hr",
+      "mean_spo2",
+      "sd_hr",
+      "sd_spo2",
+      "skewness_hr",
+      "skewness_spo2",
+      "kurtosis_hr",
+      "kurtosis_spo2",
+      "max_xc_hr_spo2",
+      "min_xc_hr_spo2",
+      "sub",
+      "blackout_window"
+    ];
+
+    // Example row (exactly as requested)
+    const exampleRow = {
+      seconds_since_birth: 5000,
+      mean_hr: 120,
+      mean_spo2: 96,
+      sd_hr: 5,
+      sd_spo2: 1.5,
+      skewness_hr: 0.2,
+      skewness_spo2: -0.1,
+      kurtosis_hr: 3.2,
+      kurtosis_spo2: 2.9,
+      max_xc_hr_spo2: 0.85,
+      min_xc_hr_spo2: -0.45,
+      sub: 0.2,
+      blackout_window: 0
+    };
+
+    // Helpers
+    const q = id => document.getElementById(id);
+    function toNumber(v){
+      if (v === "" || v === null || typeof v === "undefined") return null;
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    }
+
+    function buildRowFromForm(){
+      const row = {};
+      for(const key of fields){
+        if (key === "blackout_window"){
+          row[key] = q(key).checked ? 1 : 0;
+        } else {
+          row[key] = toNumber(q(key).value);
+        }
+      }
+      return row;
+    }
+
+    function showPayload(){
+      const row = buildRowFromForm();
+      const payload = { instances: [ row ] }; // convenient for many backends
+      // Also display a pandas-friendly view:
+      const pandasLike = [ row ];
+      preview.textContent = JSON.stringify({
+        pandas_dataframe_row: pandasLike[0],
+        instances: payload.instances
+      }, null, 2);
+    }
+
+    function validate(){
+      let ok = true;
+      let messages = [];
+      function setHint(name, msg){
+        const el = document.querySelector(`.hint[data-hint-for="${name}"]`);
+        if (el) el.textContent = msg || "";
+      }
+      // Clear hints
+      fields.forEach(f => setHint(f, ""));
+
+      // Simple constraints (extend as needed)
+      const v = buildRowFromForm();
+
+      // Required numeric checks
+      for (const k of fields){
+        if (k === "blackout_window") continue;
+        if (v[k] === null){
+          ok = false;
+          setHint(k, "Required.");
+        }
+      }
+
+      // Ranges
+      function range(name, min, max){
+        if (v[name] === null) return;
+        if (v[name] < min || v[name] > max){
+          ok = false;
+          setHint(name, `Expected ${min}…${max}.`);
+        }
+      }
+      range("seconds_since_birth", 0, 1e7);
+      range("mean_hr", 40, 250);
+      range("mean_spo2", 50, 100);
+      range("sd_hr", 0, 100);
+      range("sd_spo2", 0, 50);
+      range("skewness_hr", -10, 10);
+      range("skewness_spo2", -10, 10);
+      range("kurtosis_hr", -10, 20);
+      range("kurtosis_spo2", -10, 20);
+      range("max_xc_hr_spo2", -1, 1);
+      range("min_xc_hr_spo2", -1, 1);
+      range("sub", -10, 10);
+
+      // Logical: min_xc <= max_xc
+      if (v.min_xc_hr_spo2 !== null && v.max_xc_hr_spo2 !== null){
+        if (v.min_xc_hr_spo2 > v.max_xc_hr_spo2){
+          ok = false;
+          setHint("min_xc_hr_spo2", "Should be ≤ Max XC.");
+          setHint("max_xc_hr_spo2", "Should be ≥ Min XC.");
+        }
+      }
+
+      statusBox.className = "status" + (ok ? " ok" : " err");
+      statusBox.textContent = ok ? "All good. Ready to predict." : "Please fix highlighted issues.";
+      return ok;
+    }
+
+    // Wire inputs
+    for (const k of fields){
+      const el = q(k);
+      if (!el) continue;
+      el.addEventListener("input", () => { showPayload(); validate(); });
+      el.addEventListener("change", () => { showPayload(); validate(); });
+    }
+
+    // Fill example
+    q("btn-example").addEventListener("click", () => {
+      for (const [k, val] of Object.entries(exampleRow)){
+        if (k === "blackout_window"){
+          q(k).checked = val === 1 ? true : false;
+        } else {
+          q(k).value = val;
+        }
+      }
+      showPayload();
+      validate();
+    });
+
+    // Predict (POST to your backend)
+    document.getElementById("btn-predict").addEventListener("click", async () => {
+      showPayload();
+      if (!validate()) return;
+
+      const row = buildRowFromForm();
+      // Two common shapes: pick one your backend expects.
+      const body = {
+        // pandas-like row for your server to convert to DataFrame
+        new_patient: [ row ],
+        // generic "instances" array if you're using a serving layer
+        instances: [ row ]
+      };
+
+      statusBox.className = "status";
+      statusBox.textContent = "Sending to model…";
+
+      try{
+        // Change the URL to your real endpoint:
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok){
+          const txt = await res.text();
+          throw new Error(`HTTP ${res.status} — ${txt}`);
+        }
+
+        const data = await res.json().catch(() => ({}));
+        responseBox.textContent = JSON.stringify(data, null, 2) || "OK";
+        statusBox.className = "status ok";
+        statusBox.textContent = "Prediction received.";
+      } catch (err){
+        responseBox.textContent = String(err);
+        statusBox.className = "status err";
+        statusBox.textContent = "Prediction failed. Check your endpoint.";
+      }
+    });
+
+    // Initialize
+    showPayload();
+    validate();
+  </script>
+</body>
+</html>
+
+
